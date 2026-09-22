@@ -5,9 +5,9 @@ body {
   font-family: sans-serif;
 }
 
-a {
+/* a {
   color: #f54ced;
-}
+} */
 
 p {
    margin: 0px;
@@ -20,6 +20,27 @@ ul {
   margin-left: 20px;
 }
 
+.tools{
+  display: flex;
+  gap: 24px;
+  width: fit-content;
+  margin: 30px auto 30px 8%;
+  padding: 10px 15px 15px 36px;
+  background-color: #040404;
+  border: 1px solid #ff9100;
+  border-radius: 4px;
+}
+
+.go-site-button{
+  flex:0 0 64px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-left:1px solid;
+  font-size:22px;
+  text-decoration:none;
+  color:#ffffff;
+}
 /* ===== カード全体のレイアウト ===== */
 .card {
   display: flex;

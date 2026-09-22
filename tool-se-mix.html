@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>効果音ミックスデスク</title>
+<style>
+  :root{
+    --bg:#131418;
+    --panel:#1a1c21;
+    --strip:#202329;
+    --strip-hover:#252932;
+    --line:#2d3038;
+    --line-soft:#25272e;
+    --text:#e9e7e2;
+    --text-dim:#8a8d97;
+    --text-faint:#5c5f68;
+    --accent:#e2a13d;
+    --accent-soft:#e2a13d33;
+    --mute:#c96a5c;
+    --mute-soft:#c96a5c33;
+    --ok:#7fae8e;
+    --font-head: -apple-system, "Segoe UI", "Hiragino Sans", "Yu Gothic", "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", "Consolas", monospace;
+  }
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; padding:0; height:100%;
+    background:var(--bg); color:var(--text);
+    font-family:var(--font-head);
+    -webkit-font-smoothing:antialiased;
+  }
+  body{
+    display:flex; flex-direction:column;
+    min-height:100vh;
+  }
+
+  /* ---------- header ---------- */
+  header{
+    padding:22px 24px 16px;
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg, var(--panel), var(--bg));
+  }
+  header h1{
+    margin:0 0 4px;
+    font-size:20px;
+    font-weight:700;
+    letter-spacing:0.2px;
+  }
+  header p{
+    margin:0;
+    font-size:13px;
+    color:var(--text-dim);
+  }
+
+  /* ---------- toolbar ---------- */
+  .toolbar{
+    display:flex; flex-wrap:wrap; align-items:center; gap:10px;
+    padding:14px 24px;
+    border-bottom:1px solid var(--line);
+    background:var(--panel);
+    position:sticky; top:0; z-index:5;
+  }
+  button{
+    font-family:var(--font-head);
+    font-size:13px;
+    font-weight:600;
+    border:1px solid var(--line);
+    background:var(--strip);
+    color:var(--text);
+    padding:9px 16px;
+    border-radius:7px;
+    cursor:pointer;
+    transition:background .15s, border-color .15s, transform .05s;
+  }
+  button:hover{ background:var(--strip-hover); border-color:#3a3d46; }
+  button:active{ transform:translateY(1px); }
+  button:disabled{ opacity:.45; cursor:default; }
+  button.primary{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#1a1408;
+  }
+  button.primary:hover{ background:#eeb257; }
+  button.ghost{
+    background:transparent;
+  }
+
+  .toolbar .spacer{ flex:1 1 auto; }
+
+  .master{
+    display:flex; align-items:center; gap:8px;
+    font-size:12px; color:var(--text-dim);
+    padding-left:8px;
+    border-left:1px solid var(--line);
+  }
+  .master input[type=range]{ width:110px; }
+  .master .val{ font-family:var(--font-mono); width:38px; color:var(--text); }
+
+  /* ---------- rack ---------- */
+  .rack-wrap{
+    flex:1 1 auto;
+    overflow-x:auto;
+    overflow-y:auto;
+    padding:24px;
+  }
+  .rack{
+    display:flex;
+    gap:14px;
+    align-items:flex-start;
+    min-height:360px;
+  }
+
+  .empty-state{
+    color:var(--text-faint);
+    font-size:13px;
+    border:1px dashed var(--line);
+    border-radius:10px;
+    padding:40px 24px;
+    text-align:center;
+    max-width:420px;
+    margin:20px auto;
+    line-height:1.7;
+  }
+
+  /* ---------- channel strip ---------- */
+  .strip{
+    flex:0 0 132px;
+    background:var(--strip);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:12px 10px 14px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+  }
+  .strip .name{
+    font-size:11.5px;
+    color:var(--text);
+    text-align:center;
+    width:100%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    font-weight:600;
+  }
+  .strip .mssolo{
+    display:flex; gap:6px;
+  }
+  .mssolo button{
+    padding:3px 0;
+    width:26px;
+    font-size:10.5px;
+    font-weight:700;
+    border-radius:5px;
+  }
+  .mssolo button.mute.active{ background:var(--mute); border-color:var(--mute); color:#2a0f0a; }
+  .mssolo button.solo.active{ background:var(--accent); border-color:var(--accent); color:#1a1408; }
+
+  .fader-block{
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+  }
+  .fader-track{
+    height:150px; width:36px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  input[type=range].vertical{
+    -webkit-appearance:none;
+    appearance:none;
+    width:150px; height:6px;
+    transform:rotate(-90deg);
+    background:transparent;
+  }
+  input[type=range].vertical::-webkit-slider-runnable-track{
+    height:4px; border-radius:2px;
+    background:var(--line);
+  }
+  input[type=range].vertical::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:20px; height:12px;
+    margin-top:-4px;
+    border-radius:3px;
+    background:var(--accent);
+    cursor:pointer;
+    border:1px solid #8a5e1e;
+  }
+  input[type=range].vertical::-moz-range-track{
+    height:4px; border-radius:2px; background:var(--line);
+  }
+  input[type=range].vertical::-moz-range-thumb{
+    width:20px; height:12px; border-radius:3px;
+    background:var(--accent); border:1px solid #8a5e1e; cursor:pointer;
+  }
+
+  .readout{
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--text-dim);
+  }
+  .fader-block .readout{ color:var(--accent); }
+
+  .mini-row{
+    width:100%;
+    display:flex; flex-direction:column; gap:3px;
+  }
+  .mini-row label{
+    font-size:10px; color:var(--text-faint);
+    display:flex; justify-content:space-between;
+  }
+  .mini-row label span.v{ color:var(--text-dim); font-family:var(--font-mono); }
+  .mini-row input[type=range]{
+    width:100%; height:4px;
+    -webkit-appearance:none; appearance:none;
+    background:var(--line); border-radius:2px;
+  }
+  .mini-row input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:12px; height:12px; border-radius:50%;
+    background:var(--text); cursor:pointer; margin-top:-4px;
+  }
+  .mini-row input[type=range]::-moz-range-thumb{
+    width:12px; height:12px; border-radius:50%; background:var(--text); border:none; cursor:pointer;
+  }
+  .mini-row input[type=number]{
+    width:100%;
+    background:var(--line-soft);
+    border:1px solid var(--line);
+    color:var(--text);
+    font-family:var(--font-mono);
+    font-size:11px;
+    border-radius:4px;
+    padding:3px 4px;
+  }
+
+  .remove-btn{
+    width:100%;
+    background:transparent;
+    color:var(--text-faint);
+    border:1px solid var(--line-soft);
+    font-size:11px;
+    padding:5px 0;
+    margin-top:2px;
+  }
+  .remove-btn:hover{ color:var(--mute); border-color:var(--mute); }
+
+  footer{
+    padding:10px 24px 18px;
+    font-size:11.5px;
+    color:var(--text-faint);
+    border-top:1px solid var(--line);
+  }
+
+  ::-webkit-scrollbar{ height:10px; width:10px; }
+  ::-webkit-scrollbar-thumb{ background:#2d3038; border-radius:6px; }
+  ::-webkit-scrollbar-track{ background:transparent; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>効果音ミックスデスク</h1>
+  <p>複数の効果音を読み込み、音量・ピッチ・パン・タイミングを調整して同時再生し、1本のWAVとして書き出します。</p>
+</header>
+
+<div class="toolbar">
+  <input type="file" id="fileInput" accept="audio/*" multiple hidden>
+  <button id="addBtn">+ 音源を追加</button>
+  <button id="playBtn" class="primary">再生</button>
+  <button id="stopBtn">停止</button>
+  <div class="spacer"></div>
+  <div class="master">
+    <span>マスター音量</span>
+    <input type="range" id="masterGain" min="0" max="1.5" step="0.01" value="1">
+    <span class="val" id="masterGainVal">100%</span>
+  </div>
+  <button id="exportBtn" class="primary">WAVを書き出す</button>
+</div>
+
+<div class="rack-wrap">
+  <div class="rack" id="channels"></div>
+  <div class="empty-state" id="emptyState">
+    まだ音源がありません。「+ 音源を追加」からWAV / MP3 / OGGファイルを選んでください（複数選択可）。<br>
+    各チャンネルの音量・ピッチ・パン・開始タイミングを個別に調整し、「再生」で確認、「WAVを書き出す」で1本のファイルにまとめてダウンロードできます。
+  </div>
+</div>
+
+<footer>
+  すべての処理はこのページ内（ブラウザ）で完結します。読み込んだ音源はどこにも送信されません。
+</footer>
+
+<script>
+(function(){
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  const audioCtx = new AudioContextClass();
+
+  let channels = [];      // {id, name, buffer, gainVal, pan, rate, delayMs, muted, solo, els:{...}}
+  let activeSources = [];
+
+  const fileInput   = document.getElementById('fileInput');
+  const addBtn      = document.getElementById('addBtn');
+  const playBtn     = document.getElementById('playBtn');
+  const stopBtn     = document.getElementById('stopBtn');
+  const exportBtn   = document.getElementById('exportBtn');
+  const channelsEl  = document.getElementById('channels');
+  const emptyState  = document.getElementById('emptyState');
+  const masterGain  = document.getElementById('masterGain');
+  const masterGainVal = document.getElementById('masterGainVal');
+
+  addBtn.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', handleFiles);
+  playBtn.addEventListener('click', playAll);
+  stopBtn.addEventListener('click', stopAll);
+  exportBtn.addEventListener('click', exportWav);
+  masterGain.addEventListener('input', () => {
+    masterGainVal.textContent = Math.round(masterGain.value * 100) + '%';
+  });
+
+  function updateEmptyState(){
+    emptyState.style.display = channels.length ? 'none' : 'block';
+  }
+
+  async function handleFiles(e){
+    const files = Array.from(e.target.files || []);
+    for (const file of files){
+      try{
+        const arrayBuffer = await file.arrayBuffer();
+        const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
+        addChannel(file.name, audioBuffer);
+      }catch(err){
+        alert(file.name + ' を読み込めませんでした（対応していない形式の可能性があります）');
+      }
+    }
+    fileInput.value = '';
+  }
+
+  function addChannel(name, buffer){
+    const channel = {
+      id: 'c' + Math.random().toString(36).slice(2, 10),
+      name, buffer,
+      gainVal: 1, pan: 0, rate: 1, delayMs: 0,
+      muted: false, solo: false
+    };
+    channels.push(channel);
+    renderStrip(channel);
+    updateEmptyState();
+  }
+
+  function renderStrip(channel){
+    const strip = document.createElement('div');
+    strip.className = 'strip';
+    strip.innerHTML = `
+      <div class="name" title="${escapeHtml(channel.name)}">${escapeHtml(channel.name)}</div>
+      <div class="mssolo">
+        <button class="mute" type="button">M</button>
+        <button class="solo" type="button">S</button>
+      </div>
+      <div class="fader-block">
+        <div class="readout" data-role="gainReadout">100%</div>
+        <div class="fader-track">
+          <input type="range" class="vertical" data-role="gain" min="0" max="1.5" step="0.01" value="1">
+        </div>
+      </div>
+      <div class="mini-row">
+        <label>ピッチ <span class="v" data-role="rateVal">x1.00</span></label>
+        <input type="range" data-role="rate" min="0.5" max="2" step="0.01" value="1">
+      </div>
+      <div class="mini-row">
+        <label>パン <span class="v" data-role="panVal">C</span></label>
+        <input type="range" data-role="pan" min="-1" max="1" step="0.01" value="0">
+      </div>
+      <div class="mini-row">
+        <label>遅延(ms)</label>
+        <input type="number" data-role="delay" min="0" max="10000" step="10" value="0">
+      </div>
+      <button class="remove-btn" type="button">削除</button>
+    `;
+    channelsEl.appendChild(strip);
+
+    const els = {
+      strip,
+      mute: strip.querySelector('.mute'),
+      solo: strip.querySelector('.solo'),
+      gain: strip.querySelector('[data-role=gain]'),
+      gainReadout: strip.querySelector('[data-role=gainReadout]'),
+      rate: strip.querySelector('[data-role=rate]'),
+      rateVal: strip.querySelector('[data-role=rateVal]'),
+      pan: strip.querySelector('[data-role=pan]'),
+      panVal: strip.querySelector('[data-role=panVal]'),
+      delay: strip.querySelector('[data-role=delay]'),
+      remove: strip.querySelector('.remove-btn')
+    };
+    channel.els = els;
+
+    els.gain.addEventListener('input', () => {
+      channel.gainVal = parseFloat(els.gain.value);
+      els.gainReadout.textContent = Math.round(channel.gainVal * 100) + '%';
+    });
+    els.rate.addEventListener('input', () => {
+      channel.rate = parseFloat(els.rate.value);
+      els.rateVal.textContent = 'x' + channel.rate.toFixed(2);
+    });
+    els.pan.addEventListener('input', () => {
+      channel.pan = parseFloat(els.pan.value);
+      els.panVal.textContent = panLabel(channel.pan);
+    });
+    els.delay.addEventListener('input', () => {
+      let v = parseInt(els.delay.value, 10);
+      if (isNaN(v) || v < 0) v = 0;
+      channel.delayMs = v;
+    });
+    els.mute.addEventListener('click', () => {
+      channel.muted = !channel.muted;
+      els.mute.classList.toggle('active', channel.muted);
+    });
+    els.solo.addEventListener('click', () => {
+      channel.solo = !channel.solo;
+      els.solo.classList.toggle('active', channel.solo);
+    });
+    els.remove.addEventListener('click', () => {
+      channels = channels.filter(c => c.id !== channel.id);
+      strip.remove();
+      updateEmptyState();
+    });
+  }
+
+  function panLabel(v){
+    if (Math.abs(v) < 0.03) return 'C';
+    return v < 0 ? 'L' + Math.round(-v * 100) : 'R' + Math.round(v * 100);
+  }
+
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function getActiveChannels(){
+    const hasSolo = channels.some(c => c.solo);
+    return channels.filter(c => hasSolo ? c.solo : !c.muted);
+  }
+
+  async function playAll(){
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+    stopAll();
+    const active = getActiveChannels();
+    if (active.length === 0) return;
+    const master = parseFloat(masterGain.value);
+    const startTime = audioCtx.currentTime + 0.06;
+    active.forEach(c => {
+      const src = audioCtx.createBufferSource();
+      src.buffer = c.buffer;
+      src.playbackRate.value = c.rate;
+      const gainNode = audioCtx.createGain();
+      gainNode.gain.value = c.gainVal * master;
+      const panNode = audioCtx.createStereoPanner();
+      panNode.pan.value = c.pan;
+      src.connect(gainNode).connect(panNode).connect(audioCtx.destination);
+      src.start(startTime + c.delayMs / 1000);
+      activeSources.push(src);
+    });
+  }
+
+  function stopAll(){
+    activeSources.forEach(s => { try{ s.stop(); }catch(e){} });
+    activeSources = [];
+  }
+
+  async function exportWav(){
+    const active = getActiveChannels();
+    if (active.length === 0){
+      alert('書き出す音源がありません（すべてミュート、または未追加です）');
+      return;
+    }
+    const master = parseFloat(masterGain.value);
+    const sampleRate = audioCtx.sampleRate;
+
+    let totalDuration = 0;
+    active.forEach(c => {
+      const dur = c.delayMs / 1000 + (c.buffer.duration / c.rate);
+      if (dur > totalDuration) totalDuration = dur;
+    });
+    totalDuration += 0.15;
+
+    const offlineCtx = new OfflineAudioContext(2, Math.ceil(sampleRate * totalDuration), sampleRate);
+    active.forEach(c => {
+      const src = offlineCtx.createBufferSource();
+      src.buffer = c.buffer;
+      src.playbackRate.value = c.rate;
+      const gainNode = offlineCtx.createGain();
+      gainNode.gain.value = c.gainVal * master;
+      const panNode = offlineCtx.createStereoPanner();
+      panNode.pan.value = c.pan;
+      src.connect(gainNode).connect(panNode).connect(offlineCtx.destination);
+      src.start(c.delayMs / 1000);
+    });
+
+    exportBtn.disabled = true;
+    const originalLabel = exportBtn.textContent;
+    exportBtn.textContent = '書き出し中…';
+    try{
+      const rendered = await offlineCtx.startRendering();
+      const blob = audioBufferToWav(rendered);
+      downloadBlob(blob, 'se_mix_' + Date.now() + '.wav');
+    }catch(err){
+      alert('書き出しに失敗しました: ' + err.message);
+    }finally{
+      exportBtn.disabled = false;
+      exportBtn.textContent = originalLabel;
+    }
+  }
+
+  function audioBufferToWav(buffer){
+    const numChannels = buffer.numberOfChannels;
+    const sampleRate = buffer.sampleRate;
+    const numFrames = buffer.length;
+    const bytesPerSample = 2;
+    const blockAlign = numChannels * bytesPerSample;
+    const dataSize = numFrames * blockAlign;
+    const out = new ArrayBuffer(44 + dataSize);
+    const view = new DataView(out);
+
+    function writeStr(offset, str){
+      for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+    }
+
+    writeStr(0, 'RIFF');
+    view.setUint32(4, 36 + dataSize, true);
+    writeStr(8, 'WAVE');
+    writeStr(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * blockAlign, true);
+    view.setUint16(32, blockAlign, true);
+    view.setUint16(34, 16, true);
+    writeStr(36, 'data');
+    view.setUint32(40, dataSize, true);
+
+    const channelData = [];
+    for (let ch = 0; ch < numChannels; ch++) channelData.push(buffer.getChannelData(ch));
+
+    let offset = 44;
+    for (let i = 0; i < numFrames; i++){
+      for (let ch = 0; ch < numChannels; ch++){
+        let sample = channelData[ch][i];
+        sample = Math.max(-1, Math.min(1, sample));
+        sample = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+        view.setInt16(offset, sample, true);
+        offset += 2;
+      }
+    }
+    return new Blob([out], { type: 'audio/wav' });
+  }
+
+  function downloadBlob(blob, filename){
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  }
+
+  updateEmptyState();
+})();
+</script>
+</body>
+</html>
