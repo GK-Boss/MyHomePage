@@ -1,0 +1,101 @@
+/* ===== ベース ===== */
+body {
+  background-color: #0a0e14;
+  color: #e6ebf1;
+  font-family: sans-serif;
+}
+
+a {
+  color: #f54ced;
+}
+
+p {
+   margin: 0px;
+}
+
+ul {
+  display: flex;
+  gap: 50px;
+  padding: 0;
+  margin-left: 20px;
+}
+
+/* ===== カード全体のレイアウト ===== */
+.card {
+  display: flex;
+  gap: 24px;
+  max-width: 80%;
+  margin: 30px auto;
+  padding: 10px 15px 15px 36px;
+  background-color: #040404;
+  border: 1px solid #ff9100;
+  border-radius: 4px;
+}
+
+.left-container {
+  text-align: left;
+}
+
+.public-status
+{
+  background-color: #040404;
+  border: 1px solid #ff9100;
+  border-radius: 4px;
+  padding: 2px;
+  width: fit-content;
+  height: 25px;
+  margin: 0px;
+}
+
+.right-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.screenshot {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+}
+
+/* ===== 部品 ===== */
+.play-button {
+  display: inline-block;
+  margin-top: 16px;
+  padding: 12px 24px;
+  background-color: #ff8a3d;
+  color: #0a0e14;
+  text-decoration: none;
+  border-radius: 4px;
+  font-weight: bold;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.play-button:hover {
+  background-color: #ffa15e;
+  transform: translateY(-1px);
+}
+
+/* ===== スマホ対応 ===== */
+@media (max-width: 640px) {
+  .card {
+    flex-direction: column;
+    max-width: 100%;
+    padding: 20px;
+  }
+
+  .right-container {
+    width: 100%;
+  }
+
+  .screenshot {
+    width: 100%;
+  }
+
+  ul {
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+}
