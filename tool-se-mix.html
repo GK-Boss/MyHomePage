@@ -96,6 +96,16 @@
   }
   .master input[type=range]{ width:110px; }
   .master .val{ font-family:var(--font-mono); width:38px; color:var(--text); }
+  .master input[type=number]{
+    width:56px;
+    background:var(--line-soft);
+    border:1px solid var(--line);
+    color:var(--text);
+    font-family:var(--font-mono);
+    font-size:12px;
+    border-radius:4px;
+    padding:5px 4px;
+  }
 
   /* ---------- rack ---------- */
   .rack-wrap{
@@ -199,6 +209,18 @@
     color:var(--text-dim);
   }
   .fader-block .readout{ color:var(--accent); }
+  .fader-block input[type=number]{
+    width:56px;
+    text-align:center;
+    font-family:var(--font-mono);
+    font-size:12px;
+    font-weight:700;
+    color:var(--accent);
+    background:var(--line-soft);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:3px 2px;
+  }
 
   .mini-row{
     width:100%;
@@ -209,6 +231,19 @@
     display:flex; justify-content:space-between;
   }
   .mini-row label span.v{ color:var(--text-dim); font-family:var(--font-mono); }
+  .mini-row .row-flex{
+    display:flex; align-items:center; gap:6px;
+  }
+  .mini-row .row-flex input[type=range]{ flex:1 1 auto; width:auto; }
+  .mini-row .row-flex input[type=number]{ width:58px; flex:0 0 auto; }
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button{
+    -webkit-appearance:none;
+    margin:0;
+  }
+  input[type=number]{
+    -moz-appearance:textfield;
+  }
   .mini-row input[type=range]{
     width:100%; height:4px;
     -webkit-appearance:none; appearance:none;
@@ -221,6 +256,17 @@
   }
   .mini-row input[type=range]::-moz-range-thumb{
     width:12px; height:12px; border-radius:50%; background:var(--text); border:none; cursor:pointer;
+  }
+  .mini-row input[type=range].overflow::-webkit-slider-thumb{
+    background:var(--mute);
+  }
+  .mini-row input[type=range].overflow::-moz-range-thumb{
+    background:var(--mute);
+  }
+  .mini-row input[type=range].overflow + input[type=number],
+  input[type=number].overflow{
+    border-color:var(--mute);
+    color:var(--mute);
   }
   .mini-row input[type=number]{
     width:100%;
@@ -243,6 +289,15 @@
     margin-top:2px;
   }
   .remove-btn:hover{ color:var(--mute); border-color:var(--mute); }
+
+  .legend{
+    padding:8px 24px;
+    font-size:11.5px;
+    color:var(--text-dim);
+    border-bottom:1px solid var(--line);
+    background:var(--panel);
+  }
+  .legend b{ color:var(--text); font-weight:700; }
 
   footer{
     padding:10px 24px 18px;
@@ -274,7 +329,17 @@
     <input type="range" id="masterGain" min="0" max="1.5" step="0.01" value="1">
     <span class="val" id="masterGainVal">100%</span>
   </div>
-  <button id="exportBtn" class="primary">WAVを書き出す</button>
+  <div class="master">
+    <span>最大長(秒)</span>
+    <input type="number" id="maxDuration" min="1" max="600" step="1" value="30">
+  </div>
+  <button id="exportBtn" class="primary">WAVで書き出す</button>
+  <button id="exportMp3Btn" class="primary">MP3で書き出す</button>
+</div>
+
+<div class="legend">
+  <b>M</b>(ミュート): このチャンネルを再生・書き出しから除外します。&nbsp;&nbsp;
+  <b>S</b>(ソロ): ONにしたチャンネルだけを再生・書き出しします(他は自動的に除外されます)。
 </div>
 
 <div class="rack-wrap">
@@ -289,6 +354,7 @@
   すべての処理はこのページ内（ブラウザ）で完結します。読み込んだ音源はどこにも送信されません。
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.all.js"></script>
 <script>
 (function(){
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -302,16 +368,19 @@
   const playBtn     = document.getElementById('playBtn');
   const stopBtn     = document.getElementById('stopBtn');
   const exportBtn   = document.getElementById('exportBtn');
+  const exportMp3Btn = document.getElementById('exportMp3Btn');
   const channelsEl  = document.getElementById('channels');
   const emptyState  = document.getElementById('emptyState');
   const masterGain  = document.getElementById('masterGain');
   const masterGainVal = document.getElementById('masterGainVal');
+  const maxDurationInput = document.getElementById('maxDuration');
 
   addBtn.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', handleFiles);
   playBtn.addEventListener('click', playAll);
   stopBtn.addEventListener('click', stopAll);
   exportBtn.addEventListener('click', exportWav);
+  exportMp3Btn.addEventListener('click', exportMp3);
   masterGain.addEventListener('input', () => {
     masterGainVal.textContent = Math.round(masterGain.value * 100) + '%';
   });
@@ -352,18 +421,21 @@
     strip.innerHTML = `
       <div class="name" title="${escapeHtml(channel.name)}">${escapeHtml(channel.name)}</div>
       <div class="mssolo">
-        <button class="mute" type="button">M</button>
-        <button class="solo" type="button">S</button>
+        <button class="mute" type="button" title="ミュート: このチャンネルを再生・書き出しから除外します">M</button>
+        <button class="solo" type="button" title="ソロ: ONのチャンネルだけを再生・書き出しします">S</button>
       </div>
       <div class="fader-block">
-        <div class="readout" data-role="gainReadout">100%</div>
+        <input type="number" data-role="gainInput" min="0" max="150" step="1" value="100">
         <div class="fader-track">
           <input type="range" class="vertical" data-role="gain" min="0" max="1.5" step="0.01" value="1">
         </div>
       </div>
       <div class="mini-row">
-        <label>ピッチ <span class="v" data-role="rateVal">x1.00</span></label>
-        <input type="range" data-role="rate" min="0.5" max="2" step="0.01" value="1">
+        <label>ピッチ</label>
+        <div class="row-flex">
+          <input type="range" data-role="rate" min="0.1" max="2" step="0.01" value="1">
+          <input type="number" data-role="rateInput" min="0.1" max="10" step="0.01" value="1.00">
+        </div>
       </div>
       <div class="mini-row">
         <label>パン <span class="v" data-role="panVal">C</span></label>
@@ -382,9 +454,9 @@
       mute: strip.querySelector('.mute'),
       solo: strip.querySelector('.solo'),
       gain: strip.querySelector('[data-role=gain]'),
-      gainReadout: strip.querySelector('[data-role=gainReadout]'),
+      gainInput: strip.querySelector('[data-role=gainInput]'),
       rate: strip.querySelector('[data-role=rate]'),
-      rateVal: strip.querySelector('[data-role=rateVal]'),
+      rateInput: strip.querySelector('[data-role=rateInput]'),
       pan: strip.querySelector('[data-role=pan]'),
       panVal: strip.querySelector('[data-role=panVal]'),
       delay: strip.querySelector('[data-role=delay]'),
@@ -392,13 +464,31 @@
     };
     channel.els = els;
 
-    els.gain.addEventListener('input', () => {
-      channel.gainVal = parseFloat(els.gain.value);
-      els.gainReadout.textContent = Math.round(channel.gainVal * 100) + '%';
+    function setGain(val){
+      val = Math.max(0, Math.min(1.5, val));
+      channel.gainVal = val;
+      els.gain.value = val;
+      els.gainInput.value = Math.round(val * 100);
+    }
+    function setRate(val){
+      val = Math.max(0.1, Math.min(10, val));
+      channel.rate = val;
+      els.rate.value = val; // スライダー自体のmax(2)で自動的に右端に固定される
+      els.rateInput.value = val.toFixed(2);
+      const overflow = val > parseFloat(els.rate.max);
+      els.rate.classList.toggle('overflow', overflow);
+      els.rateInput.classList.toggle('overflow', overflow);
+    }
+
+    els.gain.addEventListener('input', () => setGain(parseFloat(els.gain.value)));
+    els.gainInput.addEventListener('change', () => {
+      const v = parseFloat(els.gainInput.value);
+      setGain(isNaN(v) ? 1 : v / 100);
     });
-    els.rate.addEventListener('input', () => {
-      channel.rate = parseFloat(els.rate.value);
-      els.rateVal.textContent = 'x' + channel.rate.toFixed(2);
+    els.rate.addEventListener('input', () => setRate(parseFloat(els.rate.value)));
+    els.rateInput.addEventListener('change', () => {
+      const v = parseFloat(els.rateInput.value);
+      setRate(isNaN(v) ? 1 : v);
     });
     els.pan.addEventListener('input', () => {
       channel.pan = parseFloat(els.pan.value);
@@ -438,6 +528,14 @@
     return channels.filter(c => hasSolo ? c.solo : !c.muted);
   }
 
+  function getMaxDuration(){
+    let v = parseFloat(maxDurationInput.value);
+    if (isNaN(v) || v <= 0) v = 30;
+    return v;
+  }
+
+  let stopTimeoutId = null;
+
   async function playAll(){
     if (audioCtx.state === 'suspended') await audioCtx.resume();
     stopAll();
@@ -457,19 +555,18 @@
       src.start(startTime + c.delayMs / 1000);
       activeSources.push(src);
     });
+    stopTimeoutId = setTimeout(() => { stopAll(); }, getMaxDuration() * 1000);
   }
 
   function stopAll(){
+    if (stopTimeoutId){ clearTimeout(stopTimeoutId); stopTimeoutId = null; }
     activeSources.forEach(s => { try{ s.stop(); }catch(e){} });
     activeSources = [];
   }
 
-  async function exportWav(){
+  async function renderMixBuffer(){
     const active = getActiveChannels();
-    if (active.length === 0){
-      alert('書き出す音源がありません（すべてミュート、または未追加です）');
-      return;
-    }
+    if (active.length === 0) return null;
     const master = parseFloat(masterGain.value);
     const sampleRate = audioCtx.sampleRate;
 
@@ -478,6 +575,7 @@
       const dur = c.delayMs / 1000 + (c.buffer.duration / c.rate);
       if (dur > totalDuration) totalDuration = dur;
     });
+    totalDuration = Math.min(totalDuration, getMaxDuration());
     totalDuration += 0.15;
 
     const offlineCtx = new OfflineAudioContext(2, Math.ceil(sampleRate * totalDuration), sampleRate);
@@ -493,11 +591,19 @@
       src.start(c.delayMs / 1000);
     });
 
+    return await offlineCtx.startRendering();
+  }
+
+  async function exportWav(){
     exportBtn.disabled = true;
     const originalLabel = exportBtn.textContent;
     exportBtn.textContent = '書き出し中…';
     try{
-      const rendered = await offlineCtx.startRendering();
+      const rendered = await renderMixBuffer();
+      if (!rendered){
+        alert('書き出す音源がありません（すべてミュート、または未追加です）');
+        return;
+      }
       const blob = audioBufferToWav(rendered);
       downloadBlob(blob, 'se_mix_' + Date.now() + '.wav');
     }catch(err){
@@ -505,6 +611,59 @@
     }finally{
       exportBtn.disabled = false;
       exportBtn.textContent = originalLabel;
+    }
+  }
+
+  function floatTo16BitPCM(floatArray){
+    const out = new Int16Array(floatArray.length);
+    for (let i = 0; i < floatArray.length; i++){
+      let s = Math.max(-1, Math.min(1, floatArray[i]));
+      out[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+    }
+    return out;
+  }
+
+  function audioBufferToMp3(buffer){
+    const numChannels = buffer.numberOfChannels;
+    const sampleRate = buffer.sampleRate;
+    const kbps = 192;
+    const mp3encoder = new lamejs.Mp3Encoder(numChannels, sampleRate, kbps);
+    const sampleBlockSize = 1152;
+    const left = floatTo16BitPCM(buffer.getChannelData(0));
+    const right = numChannels > 1 ? floatTo16BitPCM(buffer.getChannelData(1)) : null;
+    const mp3Data = [];
+    for (let i = 0; i < left.length; i += sampleBlockSize){
+      const leftChunk = left.subarray(i, i + sampleBlockSize);
+      const rightChunk = right ? right.subarray(i, i + sampleBlockSize) : undefined;
+      const mp3buf = right ? mp3encoder.encodeBuffer(leftChunk, rightChunk) : mp3encoder.encodeBuffer(leftChunk);
+      if (mp3buf.length > 0) mp3Data.push(mp3buf);
+    }
+    const end = mp3encoder.flush();
+    if (end.length > 0) mp3Data.push(end);
+    return new Blob(mp3Data, { type: 'audio/mp3' });
+  }
+
+  async function exportMp3(){
+    if (typeof lamejs === 'undefined'){
+      alert('MP3エンコーダの読み込みに失敗しました。インターネット接続を確認してもう一度お試しください。');
+      return;
+    }
+    exportMp3Btn.disabled = true;
+    const originalLabel = exportMp3Btn.textContent;
+    exportMp3Btn.textContent = '書き出し中…';
+    try{
+      const rendered = await renderMixBuffer();
+      if (!rendered){
+        alert('書き出す音源がありません（すべてミュート、または未追加です）');
+        return;
+      }
+      const blob = audioBufferToMp3(rendered);
+      downloadBlob(blob, 'se_mix_' + Date.now() + '.mp3');
+    }catch(err){
+      alert('書き出しに失敗しました: ' + err.message);
+    }finally{
+      exportMp3Btn.disabled = false;
+      exportMp3Btn.textContent = originalLabel;
     }
   }
 

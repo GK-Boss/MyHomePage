@@ -24,7 +24,7 @@ ul {
   display: flex;
   gap: 24px;
   width: fit-content;
-  margin: 30px auto 30px 8%;
+  margin: 30px 0px 30px 5%;
   padding: 10px 15px 15px 36px;
   background-color: #040404;
   border: 1px solid #ff9100;
@@ -46,7 +46,7 @@ ul {
   display: flex;
   gap: 24px;
   max-width: 80%;
-  margin: 30px auto;
+  margin: 30px 0px 30px 5%;
   padding: 10px 15px 15px 36px;
   background-color: #040404;
   border: 1px solid #ff9100;
