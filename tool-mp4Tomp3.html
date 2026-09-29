@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MP4 → MP3 変換ツール</title>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d1017;--panel:#151a24;--ink:#e8ecf3;--sub:#8b96a8;--line:#28303f;--acc:#e3ad45;--acc-ink:#1a1305;color-scheme:dark;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",Meiryo,sans-serif;line-height:1.6}
+main{max-width:720px;margin:0 auto;padding:28px 18px 48px}
+h1{font-size:clamp(28px,5vw,44px);font-weight:900;margin:0 0 4px;letter-spacing:-.01em}
+.lead{margin:0 0 22px;color:var(--sub)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;display:grid;gap:18px}
+.drop{min-height:190px;border:2px dashed var(--line);border-radius:10px;display:grid;place-items:center;text-align:center;padding:24px;cursor:pointer;color:var(--sub)}
+.drop.on{border-color:var(--acc);color:var(--ink)}
+.drop b{display:block;font-size:18px;color:var(--ink);margin-bottom:4px}
+.file{display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap}
+.file b{word-break:break-all}.file span{color:var(--sub);font-size:13px}
+label,.lb{display:block;font-weight:700;font-size:14px;margin-bottom:6px}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:transparent;color:var(--ink);font:inherit;font-size:13px;padding:9px 6px;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--panel);font-weight:700}
+.btn{font:inherit;font-weight:700;border-radius:8px;padding:12px 14px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;width:100%}
+.btn.p{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+progress{width:100%;height:10px;accent-color:var(--acc)}
+.pl{display:flex;gap:12px;align-items:center}.pl input{flex:1;accent-color:var(--acc)}#tm{font-size:13px;color:var(--sub);font-variant-numeric:tabular-nums;white-space:nowrap}
+#msg{font-size:13px;min-height:1.4em;color:var(--sub);margin:0}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:520px){.two{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+<h1>MP4 → MP3 変換ツール</h1>
+<p class="lead">動画ファイルから音声を取り出して、MP3として保存できます。ファイルはブラウザ内だけで処理され、アップロードされません。</p>
+<section class="panel">
+  <div class="drop" id="drop" tabindex="0" role="button" aria-label="ファイルを選択">
+    <div><b>ここにMP4をドロップ</b>またはクリックして選択(MP4 / MOV / WebM / M4A など)</div>
+  </div>
+  <div id="opts" hidden style="display:grid;gap:18px">
+    <div class="file"><b id="fn"></b><span id="fi"></span></div>
+    <div class="two">
+      <div><span class="lb">音質(ビットレート)</span>
+        <div class="seg" id="br" role="group">
+          <button data-v="128" aria-pressed="false">128k</button>
+          <button data-v="192" aria-pressed="true">192k</button>
+          <button data-v="256" aria-pressed="false">256k</button>
+          <button data-v="320" aria-pressed="false">320k</button>
+        </div></div>
+      <div><span class="lb">チャンネル</span>
+        <div class="seg" id="ch" role="group">
+          <button data-v="2" aria-pressed="true">ステレオ</button>
+          <button data-v="1" aria-pressed="false">モノラル</button>
+        </div></div>
+    </div>
+    <button class="btn p" id="go">MP3に変換</button>
+    <progress id="pg" value="0" max="100" hidden></progress>
+    <div id="res" hidden style="display:grid;gap:12px">
+      <div class="pl"><button class="btn" id="pp" style="width:auto;padding:10px 16px">▶ 再生</button>
+        <input type="range" id="seek" min="0" max="1000" value="0" aria-label="再生位置"><span id="tm">0:00 / 0:00</span></div>
+      <button class="btn p" id="dl">MP3を保存</button>
+    </div>
+    <button class="btn" id="pick">別のファイルを選ぶ</button>
+  </div>
+  <p id="msg" role="status"></p>
+</section>
+<input type="file" id="file" accept="video/*,audio/*,.mp4,.m4a,.mov,.webm" hidden>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var file=null,mp3=null,url=null,busy=false;
+var pctx=null,pbuf=null,psrc=null,t0=0,off=0,playing=false,raf=0;
+function fmt(s){s=Math.max(0,Math.floor(s));return Math.floor(s/60)+':'+('0'+s%60).slice(-2)}
+function upd(t){$('seek').value=pbuf?Math.round(t/pbuf.duration*1000):0;$('tm').textContent=fmt(t)+' / '+fmt(pbuf?pbuf.duration:0)}
+function stopP(){if(psrc){psrc.onended=null;try{psrc.stop()}catch(e){}psrc=null}playing=false;cancelAnimationFrame(raf);$('pp').textContent='▶ 再生'}
+function tick(){var t=off+(pctx.currentTime-t0);if(t>=pbuf.duration){stopP();off=0;upd(0);return}upd(t);raf=requestAnimationFrame(tick)}
+function playP(){if(!pbuf)return;if(pctx.resume)pctx.resume();psrc=pctx.createBufferSource();psrc.buffer=pbuf;psrc.connect(pctx.destination);t0=pctx.currentTime;psrc.start(0,off);playing=true;$('pp').textContent='■ 一時停止';tick()}
+$('pp').onclick=function(){if(playing){off+=pctx.currentTime-t0;stopP()}else playP()};
+$('seek').oninput=function(){if(!pbuf)return;var was=playing;if(was)stopP();off=$('seek').value/1000*pbuf.duration;upd(off);if(was)playP()};
+function seg(id){var g=$(id);g.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
+  [].forEach.call(g.children,function(x){x.setAttribute('aria-pressed',x===b)})})}
+function val(id){return +$(id).querySelector('[aria-pressed=true]').dataset.v}
+seg('br');seg('ch');
+function size(n){return n>1048576?(n/1048576).toFixed(1)+' MB':Math.round(n/1024)+' KB'}
+function load(f){
+  if(!f||busy)return;
+  if(!/^(video|audio)\//.test(f.type)&&!/\.(mp4|m4a|mov|webm|mp3|aac)$/i.test(f.name)){$('msg').textContent='動画または音声ファイルを選んでください。';return}
+  stopP();pbuf=null;off=0;file=f;mp3=null;if(url){URL.revokeObjectURL(url);url=null}
+  $('fn').textContent=f.name;$('fi').textContent=size(f.size);
+  $('drop').hidden=true;$('opts').hidden=false;$('res').hidden=true;$('pg').hidden=true;$('go').disabled=false;$('pp').disabled=false;upd(0);
+  $('msg').textContent='';
+}
+async function convert(){
+  if(!file||busy)return;
+  if(!window.lamejs){$('msg').textContent='MP3エンコーダーを読み込めませんでした。ネットワーク接続を確認して、ページを再読み込みしてください。';return}
+  stopP();pbuf=null;off=0;if(pctx&&pctx.close){pctx.close();pctx=null}busy=true;$('go').disabled=true;$('res').hidden=true;$('pg').hidden=false;$('pg').value=0;
+  try{
+    $('msg').textContent='音声を読み込んでいます…';
+    var buf=await file.arrayBuffer(),ac;
+    try{ac=new (window.AudioContext||window.webkitAudioContext)({sampleRate:44100})}catch(e){ac=new (window.AudioContext||window.webkitAudioContext)()}
+    var ab;
+    try{ab=await ac.decodeAudioData(buf)}catch(e){
+      $('msg').textContent='このファイルの音声を読み込めませんでした。音声が入っていないか、ブラウザが対応していない形式かもしれません。Chromeでお試しください。';
+      return}
+    var kb=val('br'),chs=Math.min(val('ch'),ab.numberOfChannels),sr=ab.sampleRate;
+    var L=ab.getChannelData(0),R=ab.numberOfChannels>1?ab.getChannelData(1):L,n=L.length;
+    var enc=new lamejs.Mp3Encoder(chs,sr,kb),out=[],B=1152,step=B*40;
+    function i16(src,a,b,mixR){var o=new Int16Array(b-a);
+      for(var i=a;i<b;i++){var v=mixR?(L[i]+R[i])/2:src[i];v=v<-1?-1:v>1?1:v;o[i-a]=v*32767}return o}
+    $('msg').textContent='MP3に変換しています…';
+    for(var p=0;p<n;p+=B){
+      var e=Math.min(p+B,n),c;
+      if(chs===2)c=enc.encodeBuffer(i16(L,p,e),i16(R,p,e));
+      else c=enc.encodeBuffer(val('ch')===1&&ab.numberOfChannels>1?i16(null,p,e,true):i16(L,p,e));
+      if(c.length)out.push(c);
+      if(p%step===0){$('pg').value=Math.round(p/n*100);await new Promise(function(r){setTimeout(r,0)})}
+    }
+    var f=enc.flush();if(f.length)out.push(f);
+    mp3=new Blob(out,{type:'audio/mpeg'});
+    if(url)URL.revokeObjectURL(url);
+    url=URL.createObjectURL(mp3);
+    $('pg').value=100;$('res').hidden=false;
+    $('msg').textContent='変換できました('+size(mp3.size)+')。';
+    try{pbuf=await ac.decodeAudioData(await mp3.arrayBuffer());pctx=ac;upd(0)}
+    catch(e){pbuf=null;$('pp').disabled=true;$('msg').textContent='MP3を作成しましたが、試し聴きの確認に失敗しました。保存したファイルを再生して確認してください。'}
+  }catch(err){$('msg').textContent='変換中にエラーが起きました。ファイルが大きすぎる場合は、短く切ってからお試しください。'}
+  finally{busy=false;$('go').disabled=false}
+}
+$('go').onclick=convert;
+$('dl').onclick=function(){
+  if(!mp3)return;
+  var a=document.createElement('a');a.href=url;a.download=file.name.replace(/\.[^.]+$/,'')+'.mp3';
+  document.body.appendChild(a);a.click();a.remove();
+};
+var fi=$('file');
+function pick(){if(!busy)fi.click()}
+$('drop').onclick=pick;$('pick').onclick=pick;
+$('drop').addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();pick()}});
+fi.onchange=function(){load(fi.files[0]);fi.value=''};
+['dragover','dragenter'].forEach(function(ev){document.addEventListener(ev,function(e){e.preventDefault();$('drop').classList.add('on')})});
+['dragleave','drop'].forEach(function(ev){document.addEventListener(ev,function(e){e.preventDefault();$('drop').classList.remove('on')})});
+document.addEventListener('drop',function(e){if(e.dataTransfer.files[0])load(e.dataTransfer.files[0])});
+})();
+</script>
+</body>
+</html>

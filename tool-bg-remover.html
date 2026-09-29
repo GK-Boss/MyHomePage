@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>背景透過ツール</title>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d1017;--panel:#151a24;--ink:#e8ecf3;--sub:#8b96a8;--line:#28303f;--acc:#e3ad45;--acc-ink:#1a1305;--c1:#2a303b;--c2:#20252e;color-scheme:dark;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",Meiryo,sans-serif;line-height:1.6}
+main{max-width:1200px;margin:0 auto;padding:28px 18px 48px}
+h1{font-size:clamp(28px,5vw,44px);font-weight:900;margin:0 0 4px;letter-spacing:-.01em}
+.lead{margin:0 0 22px;color:var(--sub)}
+.grid{display:grid;grid-template-columns:270px 1fr;gap:16px;align-items:start}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
+.ctrl{display:grid;gap:16px}
+label{display:block;font-weight:700;font-size:14px;margin-bottom:4px}
+.row{display:flex;justify-content:space-between;align-items:baseline}
+.row output{color:var(--sub);font-variant-numeric:tabular-nums;font-size:13px}
+input[type=range]{width:100%;accent-color:var(--acc)}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:transparent;color:var(--ink);font:inherit;font-size:13px;padding:8px 6px;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--panel);font-weight:700}
+.key{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--sub)}
+.sw{width:28px;height:28px;border-radius:6px;border:1px solid var(--line);background:#fff}
+.btn{font:inherit;font-weight:700;border-radius:8px;padding:11px 14px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;width:100%}
+.btn.p{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.stage{min-height:340px;display:grid;place-items:center;position:relative}
+.drop{width:100%;min-height:320px;border:2px dashed var(--line);border-radius:10px;display:grid;place-items:center;text-align:center;padding:24px;cursor:pointer;color:var(--sub)}
+.drop.on{border-color:var(--acc);color:var(--ink)}
+.drop b{display:block;font-size:18px;color:var(--ink);margin-bottom:4px}
+.view{width:100%;overflow:auto;text-align:center;border-radius:8px;padding:0;background-color:var(--c1);
+background-image:linear-gradient(45deg,var(--c2) 25%,transparent 25%,transparent 75%,var(--c2) 75%),linear-gradient(45deg,var(--c2) 25%,transparent 25%,transparent 75%,var(--c2) 75%);background-size:20px 20px;background-position:0 0,10px 10px}
+.view[data-bg=white]{background:#fff}.view[data-bg=black]{background:#000}.view[data-bg=green]{background:#2ecc71}
+canvas{max-width:100%;height:auto;cursor:crosshair;image-rendering:auto;vertical-align:top}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%}@media(max-width:760px){.pair{grid-template-columns:1fr}}.cap{font-weight:700;font-size:13px;color:var(--sub);margin:0 0 6px}.orig{background:var(--c2)}
+.hint{font-size:13px;color:var(--sub);margin:10px 0 0}
+.bgs{display:flex;gap:8px;margin-top:10px;font-size:13px;color:var(--sub);align-items:center;flex-wrap:wrap}
+.bgs button{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0}
+.bgs button[aria-pressed=true]{border-color:var(--acc)}
+#msg{font-size:13px;min-height:1.4em;color:var(--sub)}
+</style>
+</head>
+<body>
+<main>
+<h1>背景透過ツール</h1>
+<p class="lead">画像を選んで、消したい背景をクリック。透明PNGとして保存できます。画像はブラウザ内だけで処理され、アップロードされません。</p>
+<div class="grid">
+  <section class="panel ctrl" aria-label="設定">
+    <div>
+      <label>消す色</label>
+      <div class="key"><span class="sw" id="sw"></span><span id="keyTxt">画像を読み込むと左上の色を自動で選びます</span></div>
+    </div>
+    <div>
+      <div class="row"><label for="tol">許容範囲</label><output id="tolO">12</output></div>
+      <input id="tol" type="range" min="0" max="60" value="12">
+    </div>
+    <div>
+      <div class="row"><label for="soft">境界のなめらかさ</label><output id="softO">6</output></div>
+      <input id="soft" type="range" min="0" max="30" value="6">
+    </div>
+    <div>
+      <div class="row"><label for="edge">白フチを削る</label><output id="edgeO">1</output></div>
+      <input id="edge" type="range" min="0" max="6" value="1">
+    </div>
+    <div>
+      <div class="row"><label for="speck">ゴミ(小さな点)を消す</label><output id="speckO">40</output></div>
+      <input id="speck" type="range" min="0" max="400" step="10" value="40">
+    </div>
+    <div>
+      <label>消す範囲</label>
+      <div class="seg" role="group">
+        <button id="mC" aria-pressed="true">つながった部分</button>
+        <button id="mG" aria-pressed="false">同じ色すべて</button>
+      </div>
+    </div>
+    <div>
+      <button class="btn p" id="dl" disabled>透明PNGを保存</button>
+      <div style="height:8px"></div>
+      <button class="btn" id="pick">別の画像を選ぶ</button>
+      <p id="msg" role="status"></p>
+    </div>
+  </section>
+  <section class="panel">
+    <div class="stage">
+      <div class="drop" id="drop" tabindex="0" role="button" aria-label="画像を選択">
+        <div><b>ここに画像をドロップ</b>またはクリックして選択(PNG / JPG / WebP)</div>
+      </div>
+      <div class="pair" id="pair" hidden>
+        <div><p class="cap">元の画像(ここをクリックして背景色を選択)</p><div class="view orig" id="vo"><canvas id="cvO"></canvas></div></div>
+        <div><p class="cap">透過結果</p><div class="view" id="view" data-bg="check"><canvas id="cv"></canvas></div></div>
+      </div>
+    </div>
+    <p class="hint" id="hint" hidden>どちらの画像もクリックで消す色を選べます。残したい部分まで消える場合は許容範囲を下げてください。</p>
+    <div class="bgs" id="bgs" hidden>プレビュー背景
+      <button aria-label="市松" aria-pressed="true" data-bg="check" style="background:repeating-conic-gradient(#d9dee3 0 25%,#fff 0 50%) 0 0/12px 12px"></button>
+      <button aria-label="白" aria-pressed="false" data-bg="white" style="background:#fff"></button>
+      <button aria-label="黒" aria-pressed="false" data-bg="black" style="background:#000"></button>
+      <button aria-label="緑" aria-pressed="false" data-bg="green" style="background:#2ecc71"></button>
+    </div>
+  </section>
+</div>
+<input type="file" id="file" accept="image/*" hidden>
+</main>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var cv=$('cv'),ctx=cv.getContext('2d',{willReadFrequently:true}),cvO=$('cvO'),ctxO=cvO.getContext('2d');
+var orig=null,W=0,H=0,key=[255,255,255],seed=[0,0],mode='c',name='image',raf=0;
+var MAXD=4096;
+
+function load(f){
+  if(!f||!/^image\//.test(f.type)){$('msg').textContent='画像ファイルを選んでください。';return}
+  name=f.name.replace(/\.[^.]+$/,'')||'image';
+  var url=URL.createObjectURL(f),im=new Image();
+  im.onload=function(){
+    var s=Math.min(1,MAXD/Math.max(im.width,im.height));
+    W=Math.round(im.width*s);H=Math.round(im.height*s);
+    cv.width=W;cv.height=H;ctx.clearRect(0,0,W,H);ctx.drawImage(im,0,0,W,H);
+    orig=ctx.getImageData(0,0,W,H);cvO.width=W;cvO.height=H;ctxO.putImageData(orig,0,0);URL.revokeObjectURL(url);
+    $('drop').hidden=true;$('pair').hidden=false;$('hint').hidden=false;$('bgs').hidden=false;$('dl').disabled=false;
+    setKey(0,0);
+    $('msg').textContent=s<1?'大きい画像のため '+W+'×'+H+' に縮小しました。':W+'×'+H+' px';
+  };
+  im.onerror=function(){$('msg').textContent='この画像は読み込めませんでした。別の形式でお試しください。'};
+  im.src=url;
+}
+function setKey(x,y){
+  var i=(y*W+x)*4,d=orig.data;
+  key=[d[i],d[i+1],d[i+2]];seed=[x,y];
+  $('sw').style.background='rgb('+key.join(',')+')';
+  $('keyTxt').textContent='rgb('+key.join(', ')+')';
+  schedule();
+}
+function schedule(){cancelAnimationFrame(raf);raf=requestAnimationFrame(run)}
+function dist(d,i){
+  var a=d[i]-key[0],b=d[i+1]-key[1],c=d[i+2]-key[2];
+  return Math.sqrt(a*a+b*b+c*c)/4.4167;
+}
+function run(){
+  if(!orig)return;
+  var t=+$('tol').value,s=+$('soft').value,lim=t+s;
+  var out=new ImageData(new Uint8ClampedArray(orig.data),W,H),d=out.data,o=orig.data;
+  function ramp(dd){return dd<=t?0:dd>=lim?1:(dd-t)/(s||1)}
+  if(mode==='g'){
+    for(var i=0;i<d.length;i+=4){var dd=dist(o,i);if(dd<lim)d[i+3]=Math.round(o[i+3]*ramp(dd))}
+  }else{
+    var seen=new Uint8Array(W*H),st=new Int32Array(W*H),n=0,p0=seed[1]*W+seed[0];
+    if(dist(o,p0*4)<lim){st[n++]=p0;seen[p0]=1}
+    while(n){
+      var p=st[--n],x=p%W,y=(p-x)/W,q=p*4;
+      d[q+3]=Math.round(o[q+3]*ramp(dist(o,q)));
+      var nb=[x>0?p-1:-1,x<W-1?p+1:-1,y>0?p-W:-1,y<H-1?p+W:-1];
+      for(var k=0;k<4;k++){var m=nb[k];if(m>=0&&!seen[m]&&dist(o,m*4)<lim){seen[m]=1;st[n++]=m}}
+    }
+  }
+  post(out);ctx.putImageData(out,0,0);
+}
+function post(out){
+  var d=out.data,o=orig.data,N=W*H,i,q;
+  // 1) 縁の色から背景色のにじみを除去
+  for(i=0;i<N;i++){q=i*4;var A=d[q+3],A0=o[q+3];
+    if(A>0&&A<A0){var a=A/A0;for(var c=0;c<3;c++){var v=(o[q+c]-key[c]*(1-a))/a;d[q+c]=v<0?0:v>255?255:v}}}
+  // 2) 小さな孤立点を削除
+  var sp=+$('speck').value;
+  if(sp>0){
+    var seen=new Uint8Array(N),st=new Int32Array(N),lst=new Int32Array(N);
+    for(i=0;i<N;i++){
+      if(seen[i]||d[i*4+3]<8)continue;
+      var n=0,m=0;st[n++]=i;seen[i]=1;
+      while(n){var p=st[--n];lst[m++]=p;var x=p%W,y=(p-x)/W,nb=[x>0?p-1:-1,x<W-1?p+1:-1,y>0?p-W:-1,y<H-1?p+W:-1];
+        for(var k=0;k<4;k++){var t=nb[k];if(t>=0&&!seen[t]&&d[t*4+3]>=8){seen[t]=1;st[n++]=t}}}
+      if(m<sp)for(var j=0;j<m;j++)d[lst[j]*4+3]=0;
+    }
+  }
+  // 3) 縁を内側へ削る(白フチ対策)
+  var er=+$('edge').value,al=new Uint8Array(N);
+  for(i=0;i<N;i++)al[i]=d[i*4+3];
+  while(er-->0){var nx=new Uint8Array(al);
+    for(var y2=0;y2<H;y2++)for(var x2=0;x2<W;x2++){var p2=y2*W+x2,v2=al[p2];if(!v2)continue;
+      if(x2>0&&al[p2-1]<v2)v2=al[p2-1];if(x2<W-1&&al[p2+1]<v2)v2=al[p2+1];
+      if(y2>0&&al[p2-W]<v2)v2=al[p2-W];if(y2<H-1&&al[p2+W]<v2)v2=al[p2+W];nx[p2]=v2}
+    al=nx}
+  for(i=0;i<N;i++)d[i*4+3]=al[i];
+}
+
+[cv,cvO].forEach(function(c){c.addEventListener('click',function(e){
+  if(!orig)return;
+  var r=c.getBoundingClientRect();
+  var x=Math.min(W-1,Math.max(0,Math.floor((e.clientX-r.left)*W/r.width)));
+  var y=Math.min(H-1,Math.max(0,Math.floor((e.clientY-r.top)*H/r.height)));
+  setKey(x,y);
+})});
+['tol','soft','edge','speck'].forEach(function(id){$(id).addEventListener('input',function(){$(id+'O').textContent=this.value;schedule()})});
+function setMode(m){mode=m;$('mC').setAttribute('aria-pressed',m==='c');$('mG').setAttribute('aria-pressed',m==='g');schedule()}
+$('mC').onclick=function(){setMode('c')};$('mG').onclick=function(){setMode('g')};
+$('bgs').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  $('view').dataset.bg=b.dataset.bg;
+  [].forEach.call($('bgs').querySelectorAll('button'),function(x){x.setAttribute('aria-pressed',x===b)});
+});
+var fi=$('file');
+function pick(){fi.click()}
+$('drop').onclick=pick;$('pick').onclick=pick;
+$('drop').addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();pick()}});
+fi.onchange=function(){load(fi.files[0]);fi.value=''};
+['dragover','dragenter'].forEach(function(ev){document.addEventListener(ev,function(e){e.preventDefault();$('drop').classList.add('on')})});
+['dragleave','drop'].forEach(function(ev){document.addEventListener(ev,function(e){e.preventDefault();$('drop').classList.remove('on')})});
+document.addEventListener('drop',function(e){if(e.dataTransfer.files[0])load(e.dataTransfer.files[0])});
+
+$('dl').onclick=function(){
+  if(!orig)return;
+  cv.toBlob(async function(blob){
+    if(!blob){$('msg').textContent='PNGの生成に失敗しました。';return}
+    try{
+      var dlc=window.claude&&await window.claude.use('downloads');
+      if(dlc){await dlc.save({filename:name+'_transparent.png',data:blob});$('msg').textContent='保存しました。';return}
+    }catch(err){if(err&&err.code==='declined'){$('msg').textContent='保存をキャンセルしました。';return}}
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name+'_transparent.png';
+    document.body.appendChild(a);a.click();a.remove();
+    $('msg').textContent='保存できない場合は、画像を長押し(右クリック)して保存してください。';
+  },'image/png');
+};
+})();
+</script>
+</body>
+</html>
