@@ -4,108 +4,245 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Knightのホームページ</title>
+
+  <!-- 検索結果やSNSで共有されたときに表示される情報 -->
+  <meta name="description" content="Unityで2Dゲームを作っている個人開発者 Knight のホームページ。制作したゲームと自作ツールを公開しています。">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Knightのホームページ">
+  <meta property="og:description" content="Unityで2Dゲームを作っている個人開発者のホームページ。ゲームと自作ツールを公開中。">
+  <meta property="og:url" content="https://gk-boss.github.io/MyHomePage/">
+  <meta name="theme-color" content="#0a0e14">
+
+  <!-- タブに表示される小さなアイコン(画像ファイル不要のSVG) -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%23040404'/%3E%3Crect x='1' y='1' width='30' height='30' rx='3' fill='none' stroke='%23ff9100' stroke-width='2'/%3E%3Ctext x='16' y='23' font-size='20' font-weight='bold' text-anchor='middle' fill='%23ff9100' font-family='sans-serif'%3EK%3C/text%3E%3C/svg%3E">
+
+  <!-- ツールページと同じフォント -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="style.css">
+
+  <!-- JSが動く環境だけ「js」クラスを付ける(出現アニメーションを安全に使うための目印) -->
+  <script>document.documentElement.classList.add('js');</script>
+  <script src="script.js" defer></script>
 </head>
 <body>
 
-  <!-- 効果音ミックスデスク -->
-  <div class="tools">
-    <div class="left-container">
-
-      <p style="font-size:20px;">効果音ミックスデスク</p>
-
-      <p style="font-size:13px;">効果音を重ねて音量・ピッチ・パンを調整し、WAVで書き出せるツール</p>
-
+  <!-- ===== ヘッダー(上に固定されるナビ) ===== -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="#top" class="logo">Knight<span class="logo-dot">.</span></a>
+      <nav class="site-nav" aria-label="メインメニュー">
+        <a href="#about">About</a>
+        <a href="#works">Works</a>
+        <a href="#tools">Tools</a>
+        <a href="#news">News</a>
+        <a href="#links">Links</a>
+      </nav>
     </div>
+  </header>
 
-      <a href="tool-se-mix.html" class="go-site-button">></a>
+  <main id="top">
 
-  </div>
-
-    <!-- mp4Tomp3 -->
-  <div class="tools">
-    <div class="left-container">
-
-      <p style="font-size:20px;">mp4Tomp3</p>
-
-        <p style="font-size:13px;">mp4をmp3に変換するツール</p>
-
-    </div>
-
-      <a href="tool-mp4Tomp3.html" class="go-site-button">></a>
-
-  </div>
-
-    <!-- 背景透過 -->
-  <div class="tools">
-    <div class="left-container">
-
-      <p style="font-size:20px;">背景透過</p>
-
-        <p style="font-size:13px;">画像の背景を透過させるツール</p>
-
-    </div>
-
-      <a href="tool-bg-remover.html" class="go-site-button">></a>
-
-  </div>
-
-
-  <!-- クロノス -->
-  <div class="card">
-    <div class="left-container">
-      <div class="public-status">
-        <p>UnityRoomにて公開中</p>
+    <!-- ===== ヒーロー(最初に目に入る部分) ===== -->
+    <section class="hero">
+      <div class="container">
+        <p class="hero-label">UNITY INDIE DEVELOPER</p>
+        <h1 class="hero-title">Knight</h1>
+        <p class="hero-lead">
+          Unityで2Dゲームを作っている個人開発者です。<br>
+          ゲームと、自作のツールを公開しています。
+        </p>
+        <div class="hero-actions">
+          <a href="#works" class="btn">作品を見る</a>
+          <a href="#tools" class="btn btn-ghost">ツールを使う</a>
+        </div>
       </div>
+    </section>
 
-      <h1>クロノス</h1>
-      <p>Unity1Weekのお題「シロ」に合わせて1週間で制作したアクションゲームです。</p>
+    <!-- ===== About ===== -->
+    <section id="about" class="section">
+      <div class="container">
+        <h2 class="section-title reveal"><span class="section-num">01</span>About</h2>
 
-      <h2>ゲームの概要</h2>
-      <p>時間を操作して、「黒の巣」を排除せよ！</p>
+        <div class="about reveal">
+          <div class="about-text">
+            <p>
+              学生をしながら、Unityでゲームを個人開発しています。
+              現在は2Dのタワーディフェンスストラテジーゲーム「Asterism Marbloid」を制作中です。
+            </p>
+            <p>
+              Unity1Weekにも参加し、1週間で作ったアクションゲーム「クロノス」をUnityRoomで公開しました。
+              YouTubeとXでも活動しています。
+            </p>
+          </div>
 
-      <h3>必要な環境</h3>
-      <ul>
-        <li>パソコン</li>
-        <li>キーボード</li>
-        <li>マウス</li>
-      </ul>
-
-      <a href="https://unityroom.com/games/knight_firstgame" class="play-button">プレイする</a>
-    </div>
-
-    <div class="right-container">
-      <img src="https://picsum.photos/id/1015/300/200" alt="クロノスのスクリーンショット1" class="screenshot">
-    </div>
-  </div>
-
-  <!-- Asterism Marbloid -->
-  <div class="card">
-    <div class="left-container">
-      <div class="public-status">
-        <p>制作中...</p>
+          <dl class="facts">
+            <div class="fact"><dt>活動名</dt><dd>Knight</dd></div>
+            <div class="fact"><dt>分野</dt><dd>Unity個人開発</dd></div>
+            <div class="fact"><dt>制作中</dt><dd>2Dタワーディフェンスストラテジー</dd></div>
+            <div class="fact"><dt>公開作品</dt><dd>クロノス(Unity1Week)</dd></div>
+          </dl>
+        </div>
       </div>
+    </section>
 
-      <h1>Asterism Marbloid</h1>
-      <p>長期的な作品です</p>
+    <!-- ===== Works(ゲーム) ===== -->
+    <section id="works" class="section">
+      <div class="container">
+        <h2 class="section-title reveal"><span class="section-num">02</span>Works</h2>
 
-      <h2>ゲームの概要</h2>
-      <p>資源を集めながら、敵からコアを守れ！</p>
+        <!-- クロノス -->
+        <article class="card reveal">
+          <div class="card-body">
+            <p class="badge badge-live">UnityRoomにて公開中</p>
 
-      <h3>必要な環境</h3>
-      <ul>
-        <li>パソコン</li>
-        <li>キーボード</li>
-        <li>マウス</li>
-      </ul>
+            <h3 class="card-title">クロノス</h3>
+            <p>Unity1Weekのお題「シロ」に合わせて1週間で制作したアクションゲームです。</p>
 
-      <a href="" class="play-button">プレイ不可</a>
+            <ul class="tags">
+              <li>Unity</li>
+              <li>Unity1Week</li>
+              <li>アクション</li>
+            </ul>
+
+            <h4 class="card-sub">ゲームの概要</h4>
+            <p>時間を操作して、「黒の巣」を排除せよ！</p>
+
+            <h4 class="card-sub">必要な環境</h4>
+            <ul class="env-list">
+              <li>パソコン</li>
+              <li>キーボード</li>
+              <li>マウス</li>
+            </ul>
+
+            <a href="https://unityroom.com/games/knight_firstgame" class="btn" target="_blank" rel="noopener">プレイする</a>
+          </div>
+
+          <div class="card-media">
+            <!-- TODO: 本物のスクリーンショットに差し替える(例: images/chronos-1.png) -->
+            <img src="https://picsum.photos/id/1015/300/200" alt="クロノスのスクリーンショット" class="screenshot" loading="lazy">
+          </div>
+        </article>
+
+        <!-- Asterism Marbloid -->
+        <article class="card reveal">
+          <div class="card-body">
+            <p class="badge badge-wip">制作中...</p>
+
+            <h3 class="card-title">Asterism Marbloid</h3>
+            <p>長期的な作品です</p>
+
+            <ul class="tags">
+              <li>Unity</li>
+              <li>2D</li>
+              <li>タワーディフェンス</li>
+            </ul>
+
+            <h4 class="card-sub">ゲームの概要</h4>
+            <p>資源を集めながら、敵からコアを守れ！</p>
+
+            <h4 class="card-sub">必要な環境</h4>
+            <ul class="env-list">
+              <li>パソコン</li>
+              <li>キーボード</li>
+              <li>マウス</li>
+            </ul>
+
+            <!-- まだ遊べないので、リンクではなく押せないボタンにしている -->
+            <span class="btn btn-disabled" aria-disabled="true">プレイ不可</span>
+          </div>
+
+          <div class="card-media">
+            <!-- TODO: 本物のスクリーンショットに差し替える -->
+            <img src="https://picsum.photos/id/1018/300/200" alt="Asterism Marbloidのスクリーンショット" class="screenshot" loading="lazy">
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ===== Tools(自作ツール) ===== -->
+    <section id="tools" class="section">
+      <div class="container">
+        <h2 class="section-title reveal"><span class="section-num">03</span>Tools</h2>
+        <p class="section-lead reveal">ブラウザだけで使える自作ツールです。</p>
+
+        <div class="tool-grid">
+          <a href="tool-se-mix.html" class="tool reveal">
+            <div class="tool-text">
+              <p class="tool-name">効果音ミックスデスク</p>
+              <p class="tool-desc">効果音を重ねて音量・ピッチ・パンを調整し、WAVで書き出せるツール</p>
+            </div>
+            <span class="tool-arrow" aria-hidden="true">&gt;</span>
+          </a>
+
+          <a href="tool-mp4Tomp3.html" class="tool reveal">
+            <div class="tool-text">
+              <p class="tool-name">mp4Tomp3</p>
+              <p class="tool-desc">mp4をmp3に変換するツール</p>
+            </div>
+            <span class="tool-arrow" aria-hidden="true">&gt;</span>
+          </a>
+
+          <a href="tool-bg-remover.html" class="tool reveal">
+            <div class="tool-text">
+              <p class="tool-name">背景透過</p>
+              <p class="tool-desc">画像の背景を透過させるツール</p>
+            </div>
+            <span class="tool-arrow" aria-hidden="true">&gt;</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== News(お知らせ) ===== -->
+    <section id="news" class="section">
+      <div class="container">
+        <h2 class="section-title reveal"><span class="section-num">04</span>News</h2>
+
+        <!-- 新しいお知らせは、一番上に <li> を1行足すだけ -->
+        <ul class="news reveal">
+          <li>
+            <time datetime="2026-08-02">2026.08.02</time>
+            <span>アクションゲーム「クロノス」をUnityRoomで公開しました。</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ===== Links ===== -->
+    <section id="links" class="section">
+      <div class="container">
+        <h2 class="section-title reveal"><span class="section-num">05</span>Links</h2>
+
+        <div class="link-grid">
+          <!-- TODO: href を自分のURLに変更する(XのIDを入れる / YouTubeのURLが合っているか確認) -->
+          <a href="https://x.com/YOUR_ID" class="link-card reveal" target="_blank" rel="noopener">
+            <span class="link-service">X</span>
+            <span class="link-name">Knight@Unity個人開発</span>
+          </a>
+          <a href="https://www.youtube.com/@boss_knight" class="link-card reveal" target="_blank" rel="noopener">
+            <span class="link-service">YouTube</span>
+            <span class="link-name">boss_knight</span>
+          </a>
+          <a href="https://unityroom.com/games/knight_firstgame" class="link-card reveal" target="_blank" rel="noopener">
+            <span class="link-service">UnityRoom</span>
+            <span class="link-name">クロノス</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== フッター ===== -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p>&copy; <span id="year">2026</span> Knight</p>
+      <a href="#top" class="to-top">ページの先頭へ ↑</a>
     </div>
-
-    <div class="right-container">
-      <img src="https://picsum.photos/id/1015/300/200" alt="Asterism Marbloidのスクリーンショット1" class="screenshot">
-    </div>
-  </div>
+  </footer>
 
 </body>
 </html>
